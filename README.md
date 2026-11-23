@@ -18,9 +18,10 @@ Every layout follows the original InDesign (IDML) files.
 
 ### Things to know
 
-- **Edits stay in your own browser.** They save automatically, but they aren't shared with colleagues and are lost if the browser data is cleared.
-  - To pass a menu to someone else, use **⋯ › Download backup**. They load it with **⋯ › Restore backup**.
-- **⋯ › Reset to original** brings a menu back to the InDesign version.
+- **Changes are kept.** Every edit saves automatically. Once shared saving is set up, edits also go to the team's shared Google Sheet, so the next person continues from the latest version on any computer. The top bar shows **Saved for everyone**.
+- The first save on a computer asks for your name and the team passcode (once).
+- **⋯ › Version history** lists every saved version, with who saved it and when, and can restore any of them.
+- **⋯ › Download backup** saves a copy of all menus as a file. **⋯ › Reset to original** brings a menu back to the InDesign version.
 - **Brand fonts.** Alverata, Greycliff Arabic CF, Garamond Premier Pro, Aktiv Grotesk Ex and Adobe Arabic are licensed, so they are **not** in this repository.
   - If they are installed on the computer, they are used automatically.
   - Otherwise close free stand-ins are used.
@@ -31,6 +32,8 @@ Every layout follows the original InDesign (IDML) files.
 1. Upload the contents of this folder to the repository root, including `index.html`, `build.py`, `src/` and `.nojekyll`.
 2. Open **Settings › Pages**. Set **Source** to “Deploy from a branch”, **Branch** to `main`, and the folder to `/ (root)`. Save.
 3. After a minute the site is live at **https://auhpt.github.io/FB/**. Share that link with the team.
+4. Set up shared saving (once): follow **`shared-saving/SETUP.md`**, then paste the web app link into **`config.json`**.
+   - Until that's done, edits save only in each person's own browser.
 
 ## Changing the tool
 
@@ -46,6 +49,8 @@ Commit both the `src/` change and the new `index.html`.
 |---|---|
 | `src/app_head.html` | Page shell and all CSS. The UI colours are at the top: Pantone 554 `#324F47` and Warm Grey 1 `#ECE6DA`. |
 | `src/app.js` | The app: outlet and menu screens, the editor, page settings, export, backup and the fonts dialog. |
+| `src/sync.js` | Shared saving, conflict handling and version history. It talks to `shared-saving/Code.gs`. |
+| `config.json` | The shared-saving web app link. Edit it on GitHub; no rebuild needed. |
 | `src/engine.js` | Shared layout engine (pagination, measuring) and the **Lilia** templates. |
 | `src/diya_engine.js`, `src/tayo_engine.js` | The **Diya** and **Tayō** templates. All positions are in pt, taken from the IDML files. |
 | `src/seed.js`, `src/diya_seed.js`, `src/tayo_seed.js` (+ `src/data/`) | The original menu content, used by “Reset to original”. |

@@ -25,8 +25,10 @@ DB.menus=DB.menus||{};
 for(const id in SEED_MENUS)if(!DB.menus[id])DB.menus[id]=seed(id);else withIds(DB.menus[id]);
 let FONTS={};try{FONTS=JSON.parse(localStorage.getItem(FKEY))||{};}catch(e){}
 let saveT=null;
-function persist(){clearTimeout(saveT);setSave('dirty');saveT=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify(DB));setSave('ok');}catch(e){setSave('err');toast('Could not save in this browser: '+e.message);}},450);}
-function setSave(s){const el=$('#saveState');if(!el)return;el.classList.toggle('dirty',s!=='ok');el.querySelector('span').textContent=s==='ok'?'All changes saved':s==='err'?'Not saved':'Saving…';}
+function persist(){clearTimeout(saveT);setSave('dirty');saveT=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify(DB));if(typeof CLOUD!=='undefined'&&CLOUD.ready){cloudStatus();cloudSoon();}else setSave('ok');}catch(e){setSave('err');toast('Could not save in this browser: '+e.message);}},450);}
+function setSave(s){const el=$('#saveState');if(!el)return;el.classList.toggle('dirty',s==='dirty');el.classList.toggle('bad',s==='err'||s==='offline'||s==='unshared');
+  el.title=s==='shared'?'Saved in the team’s shared folder — everyone continues from this version':s==='offline'?'No connection: saved on this computer and will upload automatically':s==='ok'?'Saved in this browser':'';
+  el.querySelector('span').textContent={ok:'All changes saved',shared:'Saved for everyone',unshared:'Saved on this computer only · click to share',offline:'Offline — saved on this computer',err:'Not saved'}[s]||'Saving…';}
 
 /* ---------- fonts ---------- */
 function injectUserFonts(){let css='';for(const w of ['600','700','800'])if(FONTS[w])css+=`@font-face{font-family:'AktivUser';font-weight:${w};src:url(${FONTS[w]});}`;
@@ -71,7 +73,7 @@ function menusScreen(o){crumbs([{t:'Outlets',href:'#/'},{t:o.name}]);
   o.menus.forEach(id=>{const m=DB.menus[id],t=T[m.template],c=counts(m);
     const thumb=h('div',{class:'mthumb',style:`--ar:${t.size[0]}/${t.size[1]};--c:${t.thumb||t.color}`});
     g.append(h('div',{class:'card',onclick:()=>go('#/'+o.id+'/'+id)},h('div',{class:'mcard'},thumb,h('div',{},h('h3',{},m.name),h('p',{},t.label),
-      h('p',{style:'margin-top:6px'},`${c.s} sections · ${c.i} items`),h('div',{class:'meta'},m.updatedAt?'Edited '+new Date(m.updatedAt).toLocaleString([], {dateStyle:'medium',timeStyle:'short'}):'Original version')))));});
+      h('p',{style:'margin-top:6px'},`${c.s} sections · ${c.i} items`),h('div',{class:'meta'},m.updatedAt?'Edited '+((SYNC[id]&&SYNC[id].by&&!isDirty(id))?'by '+SYNC[id].by+' · ':'')+new Date(m.updatedAt).toLocaleString([], {dateStyle:'medium',timeStyle:'short'}):'Original version')))));});
   w.append(g);app.append(w);}
 
 /* ---------- screen 3: editor ---------- */
@@ -90,7 +92,7 @@ function editorScreen(o,id){M=DB.menus[id];MID=id;hist=[];fut=[];lastSnap=snap()
   crumbs([{t:'Outlets',href:'#/'},{t:o.name,href:'#/'+o.id},{t:M.name}]);
   const ta=$('#topActions');ta.innerHTML='';
   ta.append(h('div',{class:'save-state',id:'saveState'},h('i'),h('span',{},'All changes saved')),
-    h('button',{class:'btn ghost icon',id:'bUndo',title:'Undo (Ctrl/Cmd+Z)',html:ico('undo'),onclick:undo,disabled:true}),
+    null,h('button',{class:'btn ghost icon',id:'bUndo',title:'Undo (Ctrl/Cmd+Z)',html:ico('undo'),onclick:undo,disabled:true}),
     h('button',{class:'btn ghost icon',id:'bRedo',title:'Redo (Ctrl/Cmd+Shift+Z)',html:ico('redo'),onclick:redo,disabled:true}),
     moreMenu(),
     h('button',{class:'btn pri',id:'bPdf',onclick:e=>exportPDF(e.currentTarget),html:`<span class="spin"></span><span class="lbl" style="display:flex;gap:7px;align-items:center">${ico('pdf')}Export PDF</span>`}));
@@ -107,12 +109,13 @@ function editorScreen(o,id){M=DB.menus[id];MID=id;hist=[];fut=[];lastSnap=snap()
     h('div',{class:'pview',id:'pview'}));
   app.append(h('div',{class:'ed screen'},left,right));
   $('#pview').addEventListener('click',e=>{const el=e.target.closest('[data-id]');if(el)selectFromPreview(el.dataset.id);});
-  buildLeft();fontsReady().then(refreshPreview);}
+  buildLeft();fontsReady().then(refreshPreview);if(CLOUD.ready)cloudStatus();}
 
 function moreMenu(){const wrap=h('div',{style:'position:relative'});
   const b=h('button',{class:'btn ghost icon',title:'More',html:ico('more')});wrap.append(b);
   b.onclick=e=>{e.stopPropagation();const ex=wrap.querySelector('.menu-pop');if(ex){ex.remove();return;}
     const pop=h('div',{class:'menu-pop'},
+      h('button',{onclick:historyModal,html:ico('reset')+'Version history…'}),h('hr'),
       h('button',{onclick:exportBackup,html:ico('dl')+'Download backup (.json)'}),
       h('button',{onclick:()=>importBackup(),html:ico('ul')+'Restore from backup…'}),
       h('hr'),h('button',{onclick:fontsModal,html:ico('font')+'Brand fonts…'}),
@@ -397,3 +400,4 @@ document.addEventListener('keydown',e=>{if(!M||!$('#pview'))return;const k=e.key
 window.addEventListener('beforeprint',()=>{if(!$('#printRoot').innerHTML&&M){const [W,H]=T[M.template].size;$('#printRoot').innerHTML=renderMenu(M).map(p=>p.html).join('');$('#pageSizeCss').textContent=`@page{size:${W}pt ${H}pt;margin:0}`;}});
 window.addEventListener('afterprint',()=>{setTimeout(()=>$('#printRoot').innerHTML='',300);});
 render();
+cloudInit();

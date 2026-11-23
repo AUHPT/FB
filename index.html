@@ -75,6 +75,11 @@ input,textarea,select{font:inherit;color:inherit}
 .save-state{font-size:12.5px;color:var(--mut);display:flex;align-items:center;gap:6px;white-space:nowrap}
 .save-state i{width:7px;height:7px;border-radius:50%;background:var(--ok);display:inline-block;transition:background .3s}
 .save-state.dirty i{background:#E0A100}
+.save-state.bad i{background:#D9822B}
+.vlist{display:flex;flex-direction:column;gap:6px;max-height:50vh;overflow:auto}
+.vrow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border:1px solid var(--line2);border-radius:11px;background:#FDFCF9}
+.vrow b{display:block;font-size:13.5px;font-weight:600}.vrow small{color:var(--mut);font-size:12px}
+.modal .inp{height:38px;padding:8px 11px}
 svg.ic{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
 
 /* ---------- screens ---------- */
@@ -1331,6 +1336,127 @@ T.tayoSunbeds={size:[1530.71,680.31],color:TY.amber,thumb:'#F1C3A3',label:'6-pan
   return out;}
 };
 
+/* ================= SHARED SAVING (Google Apps Script + Google Sheet) =================
+   Every change is saved in this browser at once, and — when a shared-saving link is set in
+   config.json — also to the team's Google Sheet, so everyone continues from the latest
+   saved menu. Each save is kept as a version that can be restored. */
+const SKEY='mangroves-menu-studio-sync',UKEY='mangroves-menu-studio-user';
+const CLOUD={url:'',ready:false,online:true,busy:false,timer:null,poll:null};
+let SYNC={};try{SYNC=JSON.parse(localStorage.getItem(SKEY))||{};}catch(e){}
+let USER={};try{USER=JSON.parse(localStorage.getItem(UKEY))||{};}catch(e){}
+const saveSync=()=>{try{localStorage.setItem(SKEY,JSON.stringify(SYNC));}catch(e){}};
+function hashStr(s){let h1=0xdeadbeef,h2=0x41c6ce57;for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677);}
+  h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);return (h2>>>0).toString(36)+(h1>>>0).toString(36);}
+const menuHash=id=>hashStr(JSON.stringify(DB.menus[id]));
+/* a menu needs uploading when it differs from the last version this browser saved/loaded */
+const isDirty=id=>{const s=SYNC[id];return s?s.hash!==menuHash(id):!!DB.menus[id].updatedAt;};
+
+async function cloudInit(){
+  try{const r=await fetch('config.json',{cache:'no-store'});if(r.ok){const c=await r.json();CLOUD.url=(c.sharedSaveUrl||'').trim();}}catch(e){}
+  if(!CLOUD.url){setSave('ok');return;}
+  CLOUD.ready=true;await cloudPull(true);
+  CLOUD.poll=setInterval(()=>{if(!document.hidden)cloudPull();},45000);
+  window.addEventListener('focus',()=>cloudPull());
+  window.addEventListener('online',()=>{CLOUD.online=true;cloudPush();});}
+
+async function api(params,body){
+  const url=CLOUD.url+(params?'?'+new URLSearchParams(params):'');
+  const r=body?await fetch(url,{method:'POST',body:JSON.stringify(body),headers:{'Content-Type':'text/plain;charset=utf-8'}}):await fetch(url,{cache:'no-store'});
+  if(!r.ok)throw new Error('HTTP '+r.status);return r.json();}
+
+/* bring in the team's latest saves */
+async function cloudPull(first){
+  if(!CLOUD.ready||CLOUD.busy)return;CLOUD.busy=true;let changed=[],conflicts=[];
+  try{const res=await api({action:'list'});if(!res.ok)throw new Error(res.error);CLOUD.online=true;
+    for(const c of res.menus){if(!DB.menus[c.id]&&!SEED_MENUS[c.id])continue;
+      const mine=SYNC[c.id];if(mine&&mine.rev>=c.rev)continue;
+      if(DB.menus[c.id]&&isDirty(c.id)&&(!mine||mine.rev<c.rev))conflicts.push(c);
+      else{adopt(c);changed.push(c);}}
+  }catch(e){CLOUD.online=false;}
+  finally{CLOUD.busy=false;}
+  saveSync();
+  if(conflicts.length)for(const c of conflicts)await resolveConflict(c);
+  if(changed.length||conflicts.length){try{localStorage.setItem(KEY,JSON.stringify(DB));}catch(e){}
+    const cur=changed.find(c=>c.id===MID);
+    if(!first&&cur)toast('Updated with the latest version saved by '+(cur.by||'a colleague'),3200);
+    if(first||cur||!MID)render();}
+  cloudPush();}
+
+function adopt(c){DB.menus[c.id]=withIds(c.data);SYNC[c.id]={rev:c.rev,at:c.at,by:c.by,hash:menuHash(c.id)};}
+
+/* upload every menu that changed on this computer */
+async function cloudPush(){
+  clearTimeout(CLOUD.timer);if(!CLOUD.ready||CLOUD.busy)return cloudStatus();
+  const ids=Object.keys(DB.menus).filter(isDirty);if(!ids.length)return cloudStatus();
+  if(!USER.key||!USER.name){if(CLOUD.declined)return cloudStatus();const ok=await askUser();if(!ok){CLOUD.declined=true;return cloudStatus();}}
+  CLOUD.busy=true;setSave('dirty');
+  try{for(const id of ids){const res=await api(null,{action:'save',id,base:(SYNC[id]||{}).rev||0,data:DB.menus[id],by:USER.name,key:USER.key});
+      if(res.ok){SYNC[id]={rev:res.rev,at:res.at,by:res.by,hash:menuHash(id)};saveSync();}
+      else if(res.error==='passcode'){USER.key='';localStorage.setItem(UKEY,JSON.stringify(USER));CLOUD.busy=false;toast('The team passcode is not correct');return cloudPush();}
+      else if(res.error==='conflict'){CLOUD.busy=false;await resolveConflict(res.current);CLOUD.busy=true;}
+      else throw new Error(res.error);}
+    CLOUD.online=true;
+  }catch(e){CLOUD.online=false;CLOUD.timer=setTimeout(cloudPush,20000);}
+  finally{CLOUD.busy=false;}
+  cloudStatus();}
+const cloudSoon=()=>{clearTimeout(CLOUD.timer);CLOUD.timer=setTimeout(cloudPush,1500);};
+
+function cloudStatus(){if(!CLOUD.ready)return setSave('ok');
+  const pending=Object.keys(DB.menus).some(isDirty);
+  setSave(!pending?'shared':(!USER.key&&CLOUD.declined)?'unshared':CLOUD.online?'dirty':'offline');
+  const el=$('#saveState');if(el&&!el._c){el._c=1;el.style.cursor='pointer';el.onclick=()=>{if(CLOUD.ready){CLOUD.declined=false;cloudPush();}};}}
+
+/* someone else saved the same menu since this browser last loaded it */
+function resolveConflict(c){return new Promise(res=>{if(!c)return res();
+  const m=DB.menus[c.id]||{},when=c.at?new Date(c.at).toLocaleString([],{dateStyle:'medium',timeStyle:'short'}):'';
+  const bg=h('div',{class:'modal-bg'});
+  const done=async mine=>{bg.remove();
+    if(mine){SYNC[c.id]={rev:c.rev,at:c.at,by:c.by,hash:'-'};saveSync();cloudSoon();}
+    else{adopt(c);saveSync();try{localStorage.setItem(KEY,JSON.stringify(DB));}catch(e){}if(MID===c.id)render();}
+    res();};
+  bg.append(h('div',{class:'modal'},h('h2',{},'“'+(m.name||c.id)+'” was changed by someone else'),
+    h('p',{},`${c.by||'A colleague'} saved a newer version${when?' on '+when:''} while this computer also had changes. Which version should be kept? The other one stays in Version history.`),
+    h('div',{style:'display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap'},
+      h('button',{class:'btn',onclick:()=>done(true)},'Keep the changes on this computer'),
+      h('button',{class:'btn pri',onclick:()=>done(false)},h('span',{class:'lbl'},'Use '+(c.by?c.by+'’s':'the newer')+' version')))));
+  document.body.append(bg);});}
+
+/* name + team passcode, asked once per browser */
+function askUser(){return new Promise(res=>{const bg=h('div',{class:'modal-bg'});
+  const n=h('input',{class:'inp',placeholder:'e.g. Rana — Tayō',value:USER.name||''}),k=h('input',{class:'inp',type:'password',placeholder:'Team passcode'});
+  const err=h('p',{style:'color:var(--danger);margin:6px 0 0;display:none'},'');
+  const go=h('button',{class:'btn pri',onclick:async()=>{if(!n.value.trim()||!k.value.trim()){err.textContent='Please fill in both.';err.style.display='';return;}
+      go.classList.add('loading');
+      try{const r=await api(null,{action:'check',key:k.value.trim()});
+        if(!r.ok){err.textContent='That passcode is not correct.';err.style.display='';go.classList.remove('loading');return;}}
+      catch(e){err.textContent='Could not reach the shared folder. Check the internet connection.';err.style.display='';go.classList.remove('loading');return;}
+      USER={name:n.value.trim(),key:k.value.trim()};localStorage.setItem(UKEY,JSON.stringify(USER));bg.remove();res(true);}},
+    h('span',{class:'spin'}),h('span',{class:'lbl'},'Save for the team'));
+  bg.append(h('div',{class:'modal'},h('h2',{},'Save your changes for the team'),
+    h('p',{},'Menus are saved in a shared folder, so everyone continues from the latest version. Enter your name (shown in Version history) and the team passcode. You only need to do this once on this computer.'),
+    h('div',{style:'display:grid;gap:10px'},n,k),err,
+    h('div',{style:'display:flex;gap:8px;justify-content:flex-end;margin-top:16px'},h('button',{class:'btn',onclick:()=>{bg.remove();res(false);}},'Not now'),go)));
+  document.body.append(bg);setTimeout(()=>n.focus(),50);});}
+
+/* version history of the open menu */
+async function historyModal(){
+  if(!CLOUD.ready){alert('Version history needs shared saving. Add the shared-saving link to config.json (see shared-saving/SETUP.md).');return;}
+  const id=MID,bg=h('div',{class:'modal-bg'}),list=h('div',{class:'vlist'},h('p',{},'Loading…'));
+  bg.addEventListener('click',e=>{if(e.target===bg)bg.remove();});
+  bg.append(h('div',{class:'modal'},h('h2',{},'Version history · '+M.name),h('p',{},'Every save is kept. Restoring a version makes it the latest version for everyone; nothing is deleted.'),list,
+    h('div',{style:'display:flex;justify-content:flex-end;margin-top:14px'},h('button',{class:'btn',onclick:()=>bg.remove()},'Close'))));
+  document.body.append(bg);
+  try{const r=await api({action:'history',id});if(!r.ok)throw new Error(r.error);list.innerHTML='';
+    if(!r.versions.length)list.append(h('p',{},'No saved versions yet.'));
+    const cur=(SYNC[id]||{}).rev;
+    r.versions.forEach(v=>list.append(h('div',{class:'vrow'},
+      h('div',{},h('b',{},'Version '+v.rev+(v.rev===cur?' · current':'')),h('small',{},(v.by||'—')+' · '+new Date(v.at).toLocaleString([],{dateStyle:'medium',timeStyle:'short'}))),
+      v.rev===cur?null:h('button',{class:'btn sm',onclick:async e=>{const b=e.currentTarget;b.disabled=true;b.textContent='Restoring…';
+        try{const x=await api({action:'version',id,rev:v.rev});if(!x.ok||!x.version)throw new Error();
+          DB.menus[id]=withIds(x.version.data);DB.menus[id].updatedAt=Date.now();persist();bg.remove();render();toast('Version '+v.rev+' restored');}
+        catch(err){b.disabled=false;b.textContent='Restore';toast('Could not restore — try again');}}},'Restore'))));
+  }catch(e){list.innerHTML='';list.append(h('p',{},'Could not load the history. Check the internet connection.'));}}
+
 /* ================= APP ================= */
 const KEY='mangroves-menu-studio-v1',FKEY='mangroves-menu-studio-fonts';
 const $=s=>document.querySelector(s);
@@ -1358,8 +1484,10 @@ DB.menus=DB.menus||{};
 for(const id in SEED_MENUS)if(!DB.menus[id])DB.menus[id]=seed(id);else withIds(DB.menus[id]);
 let FONTS={};try{FONTS=JSON.parse(localStorage.getItem(FKEY))||{};}catch(e){}
 let saveT=null;
-function persist(){clearTimeout(saveT);setSave('dirty');saveT=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify(DB));setSave('ok');}catch(e){setSave('err');toast('Could not save in this browser: '+e.message);}},450);}
-function setSave(s){const el=$('#saveState');if(!el)return;el.classList.toggle('dirty',s!=='ok');el.querySelector('span').textContent=s==='ok'?'All changes saved':s==='err'?'Not saved':'Saving…';}
+function persist(){clearTimeout(saveT);setSave('dirty');saveT=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify(DB));if(typeof CLOUD!=='undefined'&&CLOUD.ready){cloudStatus();cloudSoon();}else setSave('ok');}catch(e){setSave('err');toast('Could not save in this browser: '+e.message);}},450);}
+function setSave(s){const el=$('#saveState');if(!el)return;el.classList.toggle('dirty',s==='dirty');el.classList.toggle('bad',s==='err'||s==='offline'||s==='unshared');
+  el.title=s==='shared'?'Saved in the team’s shared folder — everyone continues from this version':s==='offline'?'No connection: saved on this computer and will upload automatically':s==='ok'?'Saved in this browser':'';
+  el.querySelector('span').textContent={ok:'All changes saved',shared:'Saved for everyone',unshared:'Saved on this computer only · click to share',offline:'Offline — saved on this computer',err:'Not saved'}[s]||'Saving…';}
 
 /* ---------- fonts ---------- */
 function injectUserFonts(){let css='';for(const w of ['600','700','800'])if(FONTS[w])css+=`@font-face{font-family:'AktivUser';font-weight:${w};src:url(${FONTS[w]});}`;
@@ -1404,7 +1532,7 @@ function menusScreen(o){crumbs([{t:'Outlets',href:'#/'},{t:o.name}]);
   o.menus.forEach(id=>{const m=DB.menus[id],t=T[m.template],c=counts(m);
     const thumb=h('div',{class:'mthumb',style:`--ar:${t.size[0]}/${t.size[1]};--c:${t.thumb||t.color}`});
     g.append(h('div',{class:'card',onclick:()=>go('#/'+o.id+'/'+id)},h('div',{class:'mcard'},thumb,h('div',{},h('h3',{},m.name),h('p',{},t.label),
-      h('p',{style:'margin-top:6px'},`${c.s} sections · ${c.i} items`),h('div',{class:'meta'},m.updatedAt?'Edited '+new Date(m.updatedAt).toLocaleString([], {dateStyle:'medium',timeStyle:'short'}):'Original version')))));});
+      h('p',{style:'margin-top:6px'},`${c.s} sections · ${c.i} items`),h('div',{class:'meta'},m.updatedAt?'Edited '+((SYNC[id]&&SYNC[id].by&&!isDirty(id))?'by '+SYNC[id].by+' · ':'')+new Date(m.updatedAt).toLocaleString([], {dateStyle:'medium',timeStyle:'short'}):'Original version')))));});
   w.append(g);app.append(w);}
 
 /* ---------- screen 3: editor ---------- */
@@ -1423,7 +1551,7 @@ function editorScreen(o,id){M=DB.menus[id];MID=id;hist=[];fut=[];lastSnap=snap()
   crumbs([{t:'Outlets',href:'#/'},{t:o.name,href:'#/'+o.id},{t:M.name}]);
   const ta=$('#topActions');ta.innerHTML='';
   ta.append(h('div',{class:'save-state',id:'saveState'},h('i'),h('span',{},'All changes saved')),
-    h('button',{class:'btn ghost icon',id:'bUndo',title:'Undo (Ctrl/Cmd+Z)',html:ico('undo'),onclick:undo,disabled:true}),
+    null,h('button',{class:'btn ghost icon',id:'bUndo',title:'Undo (Ctrl/Cmd+Z)',html:ico('undo'),onclick:undo,disabled:true}),
     h('button',{class:'btn ghost icon',id:'bRedo',title:'Redo (Ctrl/Cmd+Shift+Z)',html:ico('redo'),onclick:redo,disabled:true}),
     moreMenu(),
     h('button',{class:'btn pri',id:'bPdf',onclick:e=>exportPDF(e.currentTarget),html:`<span class="spin"></span><span class="lbl" style="display:flex;gap:7px;align-items:center">${ico('pdf')}Export PDF</span>`}));
@@ -1440,12 +1568,13 @@ function editorScreen(o,id){M=DB.menus[id];MID=id;hist=[];fut=[];lastSnap=snap()
     h('div',{class:'pview',id:'pview'}));
   app.append(h('div',{class:'ed screen'},left,right));
   $('#pview').addEventListener('click',e=>{const el=e.target.closest('[data-id]');if(el)selectFromPreview(el.dataset.id);});
-  buildLeft();fontsReady().then(refreshPreview);}
+  buildLeft();fontsReady().then(refreshPreview);if(CLOUD.ready)cloudStatus();}
 
 function moreMenu(){const wrap=h('div',{style:'position:relative'});
   const b=h('button',{class:'btn ghost icon',title:'More',html:ico('more')});wrap.append(b);
   b.onclick=e=>{e.stopPropagation();const ex=wrap.querySelector('.menu-pop');if(ex){ex.remove();return;}
     const pop=h('div',{class:'menu-pop'},
+      h('button',{onclick:historyModal,html:ico('reset')+'Version history…'}),h('hr'),
       h('button',{onclick:exportBackup,html:ico('dl')+'Download backup (.json)'}),
       h('button',{onclick:()=>importBackup(),html:ico('ul')+'Restore from backup…'}),
       h('hr'),h('button',{onclick:fontsModal,html:ico('font')+'Brand fonts…'}),
@@ -1730,6 +1859,7 @@ document.addEventListener('keydown',e=>{if(!M||!$('#pview'))return;const k=e.key
 window.addEventListener('beforeprint',()=>{if(!$('#printRoot').innerHTML&&M){const [W,H]=T[M.template].size;$('#printRoot').innerHTML=renderMenu(M).map(p=>p.html).join('');$('#pageSizeCss').textContent=`@page{size:${W}pt ${H}pt;margin:0}`;}});
 window.addEventListener('afterprint',()=>{setTimeout(()=>$('#printRoot').innerHTML='',300);});
 render();
+cloudInit();
 
 </script>
 </body>

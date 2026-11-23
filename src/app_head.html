@@ -57,6 +57,11 @@ input,textarea,select{font:inherit;color:inherit}
 .save-state{font-size:12.5px;color:var(--mut);display:flex;align-items:center;gap:6px;white-space:nowrap}
 .save-state i{width:7px;height:7px;border-radius:50%;background:var(--ok);display:inline-block;transition:background .3s}
 .save-state.dirty i{background:#E0A100}
+.save-state.bad i{background:#D9822B}
+.vlist{display:flex;flex-direction:column;gap:6px;max-height:50vh;overflow:auto}
+.vrow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border:1px solid var(--line2);border-radius:11px;background:#FDFCF9}
+.vrow b{display:block;font-size:13.5px;font-weight:600}.vrow small{color:var(--mut);font-size:12px}
+.modal .inp{height:38px;padding:8px 11px}
 svg.ic{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
 
 /* ---------- screens ---------- */
