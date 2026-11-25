@@ -66,7 +66,7 @@ def build(adobe_dir=None):
           'const TAYO_ART=' + read('data', 'tayo_art.json') + ';\n'
           'const DIYA_ILLUS="data:image/jpeg;base64,' + b64(p('assets', 'diya_illustration.jpg')) + '";\n'
           + '\n'.join([read('seed.js'), diya, tayo, read('engine.js'), read('diya_engine.js'),
-                       read('tayo_engine.js'), read('sync.js'), read('app.js')]))
+                       read('tayo_engine.js'), read('buffet_engine.js'), read('sync.js'), read('app.js')]))
     return head + '<script>\n' + js + '\n</script>\n</body>\n</html>\n'
 
 

@@ -253,7 +253,21 @@ const SEED_MENUS={
       'يض مخفوق بقوام كريمي ناعم يُقدَّم فوق خبز ساوردو محمّص يدويًا لقرمشة متوازنة، ويُتوَّج بـ ١٥ غرامًا من كافيار أوسيترا الفاخر، المعروف بملوحته الرقيقة ونكهته الجوزية العميقة.','80')]}]}
 };
 
+/* ---- Lilia buffet tags (Lilia_Buffet_Card.ai) ---- */
+SEED_MENUS['lilia-buffet']={template:'buffetTags',outlet:'lilia',name:'Buffet tags',
+  settings:{layout:'sheet',marks:true,frame:true,allergens:false,upper:false,sectionSheets:false},
+  sections:[{title:'Breakfast · Bakery',items:[
+    {name:'Croissant',name_ar:'كرواسون',allergens:'Gluten, Dairy, Eggs',qty:'1'},
+    {name:'Pain au chocolat',name_ar:'بان أو شوكولا',allergens:'Gluten, Dairy, Eggs',qty:'1'},
+    {name:'Almond croissant',name_ar:'كرواسون باللوز',allergens:'Gluten, Dairy, Eggs, Nuts',qty:'1'}]},
+   {title:'Breakfast · Cold station',items:[
+    {name:'Smoked salmon',name_ar:'سلمون مدخن',allergens:'Fish',qty:'1'},
+    {name:'Greek yoghurt',name_ar:'زبادي يوناني',allergens:'Dairy',qty:'1'},
+    {name:'Labneh',name_ar:'لبنة',allergens:'Dairy',qty:'1'},
+    {name:'Seasonal fruit',name_ar:'فواكه موسمية',allergens:'',qty:'1'}]},
+   {title:'Breakfast · Hot station',items:[
+    {name:'Scrambled eggs',name_ar:'بيض مخفوق',allergens:'Eggs, Dairy',qty:'1'}]}]};
 const OUTLETS=[
   {id:'lilia',name:'Lilia',sub:'Brasserie · All-day dining',logo:'ar',color:'#736922',
-   menus:['lilia-breakfast','lilia-ld','lilia-drinks','lilia-kids','lilia-signature']}
+   menus:['lilia-breakfast','lilia-ld','lilia-drinks','lilia-kids','lilia-signature','lilia-buffet']}
 ];

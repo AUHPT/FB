@@ -92,7 +92,7 @@ function editorScreen(o,id){M=DB.menus[id];MID=id;hist=[];fut=[];lastSnap=snap()
   crumbs([{t:'Outlets',href:'#/'},{t:o.name,href:'#/'+o.id},{t:M.name}]);
   const ta=$('#topActions');ta.innerHTML='';
   ta.append(h('div',{class:'save-state',id:'saveState'},h('i'),h('span',{},'All changes saved')),
-    null,h('button',{class:'btn ghost icon',id:'bUndo',title:'Undo (Ctrl/Cmd+Z)',html:ico('undo'),onclick:undo,disabled:true}),
+    h('button',{class:'btn ghost icon',id:'bUndo',title:'Undo (Ctrl/Cmd+Z)',html:ico('undo'),onclick:undo,disabled:true}),
     h('button',{class:'btn ghost icon',id:'bRedo',title:'Redo (Ctrl/Cmd+Shift+Z)',html:ico('redo'),onclick:redo,disabled:true}),
     moreMenu(),
     h('button',{class:'btn pri',id:'bPdf',onclick:e=>exportPDF(e.currentTarget),html:`<span class="spin"></span><span class="lbl" style="display:flex;gap:7px;align-items:center">${ico('pdf')}Export PDF</span>`}));
@@ -148,6 +148,7 @@ function itemFields(sec,it){const tp=M.template;
   if(tp==='diyaTea')return [['name','Name (EN)'],['name_ar','Name (AR)',{rtl:1}],['price','Price',{ph:sec.kind==='feature'?'e.g. 80':'38 or 38↵48'}],['desc','Description (EN)',{cls:'w3',ph:sec.kind==='feature'?'':'optional · sizes on separate lines, e.g. Small↵Large'}],['desc_ar','Description (AR)',{rtl:1,cls:'w3'}]];
   if(tp==='diyaDrinks'){if(sec.style==='list')return [['name','Name',{cls:'w2'}],['price','Price',{ph:'e.g. 66 / 1,320'}],['desc','Extra text (optional)',{cls:'w3',ph:'e.g. tasting notes, or Small↵Large with prices on 2 lines'}]];
     return [['name','Name',{cls:'w2'}],['price','Price',{ph:'e.g. 64 / 300'}],['desc','Description',{cls:'w3'}]];}
+  if(tp==='buffetTags')return [['name','Dish (EN)',{cls:'w2',ph:'e.g. Croissant'}],['qty','Copies',{ph:'1'}],['name_ar','Dish (AR)',{rtl:1,cls:'w3',ph:'e.g. كرواسون'}],['allergens','Allergens (optional)',{cls:'w3',ph:'e.g. Gluten, Dairy, Eggs'}]];
   if(tp==='tayoFood'||tp==='tayoKids'||tp==='tayoSunbeds'){const f=[['name','Dish (EN)',{cls:'w2'}],['price','Price',{ph:'e.g. 85'}],['name_ar','Dish (AR)',{rtl:1,cls:'w3'}]];
     if(it.opts_en!=null||it.opts_ar!=null)f.push(['opts_en','Options (EN) · one per line',{ph:'Tuna↵Salmon'}],['opts_price','Option prices · one per line',{ph:'95↵95'}],['opts_ar','Options (AR) · one per line',{rtl:1}]);return f;}
   if(tp==='tayoDrinks'){if(it.type==='sub')return [['name','Subheading',{cls:'w3',ph:'e.g. FRANCE'}]];
@@ -156,7 +157,7 @@ function itemFields(sec,it){const tp=M.template;
   if(tp==='drinks'){if(sec.style==='list')return [['name','Name',{cls:'w2'}],['price','Price',{ph:sec.glassBottle?'glass / bottle':''}]];
     return [['name','Name',{cls:'w2'}],['price','Price',{ph:sec.glassBottle?'glass / bottle':''}],['desc','Description',{cls:'w3'}]];}
   return [];}
-function blankItem(sec,type){const tp=M.template;const it={id:uid(),type:type||'item',name:'',name_ar:'',price:''};
+function blankItem(sec,type){const tp=M.template;if(tp==='buffetTags')return {id:uid(),type:'item',name:'',name_ar:'',allergens:'',qty:'1'};const it={id:uid(),type:type||'item',name:'',name_ar:'',price:''};
   if(type==='sub')return it;if(tp==='breakfast'&&sec&&sec.kind==='band'){it.inline=true;it.sub='';}else{it.desc='';it.desc_ar='';}return it;}
 function secLabel(sec){if(sec.kind==='blank')return 'Blank page';if(sec.kind==='divider')return 'Divider · '+(sec.title||'');
   if(M.template==='drinks'||M.template==='diyaDrinks'||M.template==='tayoDrinks')return [sec.pageTitle,sec.title].filter(Boolean).join(' › ')||'Untitled group';
@@ -182,6 +183,7 @@ function buildContent(sc){
     diyaFood:'A section with a page header (e.g. Breakfast, Lunch / Dinner) starts a new page with the large title. Each dish shows English, price and Arabic side by side.',
     diyaTea:'“3 columns” pages list English, price and Arabic. “Feature” pages show one tea per page, centred. The introduction and Afternoon Tea Experience pages are under Page settings.',
     tayoFood:'Sections flow onto pages automatically. Divider pages (illustration + title) and blank pages are listed in order, exactly as in the printed menu — move, add or delete them as needed.',
+    buffetTags:'One card per dish. Set “Copies” for dishes that need more than one card. Group dishes by station or meal — groups are only for you and are not printed.',
     tayoKids:'Add, remove or reorder dishes; the page reflows automatically.',
     tayoDrinks:'Groups with the same page title share a page. For water-style sizes write the name lines (Acqua Panna↵Small↵Large) and the prices on matching lines (↵38↵48).',
     tayoSunbeds:'Content flows across the five inside panels of the fold-out (logo panel is fixed). If it no longer fits, an extra “Overflow” sheet appears in red.',
@@ -225,6 +227,7 @@ function secCard(sec,si){const open=SECT_OPEN.has(sec.id)||M.template==='signatu
       box.append(itemList(sec,c.items,true));b.append(box);});
   }else{
     const g=h('div',{class:'fgrid'});
+    if(tp==='buffetTags')g.append(field(sec,'title','Group name (not printed)',{cls:'full',ph:'e.g. Breakfast · Bakery station'}));
     if(tp==='breakfast'||tp==='kids')g.append(field(sec,'title','Section title (EN)'),field(sec,'title_ar','Section title (AR)',{rtl:1}));
     if(tp==='ld')g.append(field(sec,'title','Section title (EN)'),field(sec,'title_ar','Section title (AR)',{rtl:1}),field(sec,'note','Note after title (EN)',{ph:'optional, e.g. (COOKED OVER EMBERS)'}),field(sec,'note_ar','Note after title (AR)',{rtl:1,ph:'optional'}));
     if(tp==='diyaFood')g.append(field(sec,'title','Section title (EN)',{ph:'optional, e.g. SALADS'}),field(sec,'title_ar','Section title (AR)',{rtl:1}),
@@ -245,7 +248,7 @@ function secCard(sec,si){const open=SECT_OPEN.has(sec.id)||M.template==='signatu
       sec.style==='list'?field(sec,'spacing','Line spacing',{select:[['compact','Compact (no gap)'],['airy','Airy (blank line between)']]}):h('div'));
     if(g.children.length)b.append(g);
     const r=h('div',{class:'row'});
-    if(tp!=='signature')r.append(toggle(sec,'newPage','Start on a new page'));
+    if(tp!=='signature'&&tp!=='buffetTags')r.append(toggle(sec,'newPage','Start on a new page'));
     if(tp==='drinks')r.append(toggle(sec,'glassBottle','Show “GLASS/BOTTLE” label'));
     if(tp==='tayoDrinks')r.append(toggle(sec,'label','Show “GLASS / BOTTLE” label'));
     if(tp==='diyaDrinks'&&sec.style==='desc')r.append(toggle(sec,'caps','Names in capitals'));
@@ -276,7 +279,7 @@ function itemCard(sec,arr,it,ii,isBand){
   const tools=h('div',{class:'tools'},
     it.type==='sub'?h('span',{class:'tag'},'Subheading'):null,
     isBand?toggle(it,'inline','Arabic on same line'):null,
-    !isBand?toggle(it,'breakBefore','New page before',{title:'Force this line to start a new page'}):null,
+    !isBand&&M.template!=='buffetTags'?toggle(it,'breakBefore','New page before',{title:'Force this line to start a new page'}):null,
     (['tayoFood','tayoSunbeds','tayoKids'].includes(M.template)&&it.type!=='sub')?h('button',{class:'btn ghost sm',style:'font-size:11px',onclick:()=>{if(it.opts_en!=null){delete it.opts_en;delete it.opts_ar;delete it.opts_price;}else{it.opts_en='';it.opts_ar='';it.opts_price='';}touched('now');buildLeft();}},it.opts_en!=null?'Remove options':'+ Options'):null,
     h('div',{class:'sp'}),
     h('button',{class:'btn ghost',title:'Move up',html:ico('up',13),disabled:ii===0,onclick:()=>mv(arr,ii,-1)}),
@@ -322,6 +325,19 @@ function buildPage(sc){const S=M.settings,tp=M.template;const G=(t,...k)=>h('div
     G('Footer',fg(field(S,'footer_en','Price note',{cls:'full'}))),G('Printing',fg(field(S,'blankEnd','Blank pages at the end',{select:[['0','None'],['1','1'],['2','2 (as in the original)'],['3','3']]}))));
   if(tp==='tayoSunbeds')sc.append(G('Sheets',h('div',{class:'row'},toggle(S,'outside','Include the outside (illustration) sheet'))),footer(),
     h('div',{class:'note'},'Prints as full flat sheets (540 × 240 mm): inside + outside. The dashed fold lines show in the preview only.'));
+  if(tp==='buffetTags'){
+    const imp=replace=>{const inp=h('input',{type:'file',accept:'.csv,text/csv'});inp.onchange=()=>{const f=inp.files[0];if(!f)return;const r=new FileReader();
+      r.onload=()=>{const secs=btFromCSV(r.result);if(!secs.length){alert('No dishes found in '+f.name+'. Check the columns: English, Arabic, Allergens, Qty (and optional Section).');return;}
+        if(replace){if(!confirm('Replace all '+counts(M).i+' dishes with the '+secs.reduce((a,s)=>a+s.items.length,0)+' in '+f.name+'?'))return;M.sections=secs;}else M.sections.push(...secs);
+        touched('now');buildLeft();toast(f.name+' loaded');};r.readAsText(f,'UTF-8');};inp.click();};
+    sc.append(G('Printing',fg(field(S,'layout','Layout',{cls:'full',select:[['sheet','A4 sheets · 9 cards per page with cut marks'],['single','One card per page (85 × 55 mm) · for card printers']]})),
+        h('div',{class:'row'},toggle(S,'marks','Cut marks (A4 sheets)'),toggle(S,'frame','Rounded frame'),toggle(S,'sectionSheets','Each group starts a new sheet'))),
+      G('Text',h('div',{class:'row'},toggle(S,'allergens','Show allergens at the bottom of the card'),toggle(S,'upper','English in capitals'))),
+      G('Import & export',h('p',{class:'note',style:'margin:0 0 10px'},'Load dishes from Excel: save the sheet as “CSV UTF-8” with the columns English, Arabic, Allergens, Qty (and optionally Section).'),
+        h('div',{class:'row'},h('button',{class:'btn sm',onclick:()=>imp(false)},'Add dishes from CSV…'),h('button',{class:'btn sm',onclick:()=>imp(true)},'Replace all from CSV…'),
+          h('button',{class:'btn sm ghost',onclick:()=>download(M.name+' '+new Date().toISOString().slice(0,10)+'.csv',btToCSV(M),'text/csv;charset=utf-8')},'Download as CSV'))),
+      h('div',{class:'note'},'Design: Lilia buffet card, 85 × 55 mm — Fraunces Light 22/24 pt and Parastoo 30/30 pt in Fig. Long names shrink automatically to fit. When printing, use Actual size / 100%.'));
+    return;}
   if(M.outlet==='tayo'){sc.append(h('div',{class:'note'},'Fonts: the original uses Alverata and Greycliff Arabic CF. If they aren’t installed on this computer, close stand-ins are used (Spectral and Readex Pro). Add the real font files under ⋯ › Brand fonts. Footers use Parastoo (built in).'));return;}
   if(M.outlet==='diya'){sc.append(h('div',{class:'note'},'Fonts: Diya uses Adobe Arabic and Garamond Premier Pro. If they aren’t installed on this computer, close stand-ins are used (Noto Naskh Arabic, EB Garamond). Add the real font files under ⋯ › Brand fonts.'));return;}
   sc.append(h('div',{class:'note'},'Fonts: Fraunces Light and Parastoo are built in. Headings use Aktiv Grotesk Ex — if it isn’t installed on this computer, a close stand-in (Archivo Expanded) is used. Add the real font files under ⋯ › Brand fonts.'));}

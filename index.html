@@ -131,7 +131,7 @@ svg.ic{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8;str
 .f label{font-size:11px;font-weight:600;color:var(--mut);letter-spacing:.02em}
 .inp{width:100%;border:1px solid var(--line);background:#fff;border-radius:9px;padding:7px 9px;font-size:13.5px;outline:none;transition:border-color .2s,box-shadow .2s;resize:vertical;min-height:34px;line-height:1.35}
 .inp:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(50,79,71,.14)}
-.inp[dir=rtl]{font-family:'Parastoo V',-apple-system,sans-serif;font-size:15px}
+.inp[dir=rtl]{font-family:'Parastoo V',-apple-system,sans-serif;font-size:17.5px}
 textarea.inp{min-height:34px;field-sizing:content}
 select.inp{appearance:none;background-image:linear-gradient(45deg,transparent 50%,#888 50%),linear-gradient(135deg,#888 50%,transparent 50%);background-position:calc(100% - 15px) 14px,calc(100% - 10px) 14px;background-size:5px 5px;background-repeat:no-repeat;padding-right:26px}
 .tgl{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--mut);cursor:pointer;user-select:none}
@@ -156,7 +156,7 @@ select.inp{appearance:none;background-image:linear-gradient(45deg,transparent 50
 .it .flds .w2{grid-column:span 2}
 .it .flds .w3{grid-column:1/-1}
 .it .inp{resize:none;font-size:13px;padding:6px 8px;min-height:31px;border-radius:8px}
-.it .inp[dir=rtl]{font-size:14.5px}
+.it .inp[dir=rtl]{font-size:17px}
 .it .tools{grid-column:1/-1;display:flex;gap:4px;align-items:center;margin-top:2px;padding-left:24px}
 .it .tools .btn{height:24px;font-size:11.5px;padding:0 8px;color:var(--mut)}
 .it .tools .tgl{font-size:11.5px}
@@ -548,9 +548,23 @@ const SEED_MENUS={
       'يض مخفوق بقوام كريمي ناعم يُقدَّم فوق خبز ساوردو محمّص يدويًا لقرمشة متوازنة، ويُتوَّج بـ ١٥ غرامًا من كافيار أوسيترا الفاخر، المعروف بملوحته الرقيقة ونكهته الجوزية العميقة.','80')]}]}
 };
 
+/* ---- Lilia buffet tags (Lilia_Buffet_Card.ai) ---- */
+SEED_MENUS['lilia-buffet']={template:'buffetTags',outlet:'lilia',name:'Buffet tags',
+  settings:{layout:'sheet',marks:true,frame:true,allergens:false,upper:false,sectionSheets:false},
+  sections:[{title:'Breakfast · Bakery',items:[
+    {name:'Croissant',name_ar:'كرواسون',allergens:'Gluten, Dairy, Eggs',qty:'1'},
+    {name:'Pain au chocolat',name_ar:'بان أو شوكولا',allergens:'Gluten, Dairy, Eggs',qty:'1'},
+    {name:'Almond croissant',name_ar:'كرواسون باللوز',allergens:'Gluten, Dairy, Eggs, Nuts',qty:'1'}]},
+   {title:'Breakfast · Cold station',items:[
+    {name:'Smoked salmon',name_ar:'سلمون مدخن',allergens:'Fish',qty:'1'},
+    {name:'Greek yoghurt',name_ar:'زبادي يوناني',allergens:'Dairy',qty:'1'},
+    {name:'Labneh',name_ar:'لبنة',allergens:'Dairy',qty:'1'},
+    {name:'Seasonal fruit',name_ar:'فواكه موسمية',allergens:'',qty:'1'}]},
+   {title:'Breakfast · Hot station',items:[
+    {name:'Scrambled eggs',name_ar:'بيض مخفوق',allergens:'Eggs, Dairy',qty:'1'}]}]};
 const OUTLETS=[
   {id:'lilia',name:'Lilia',sub:'Brasserie · All-day dining',logo:'ar',color:'#736922',
-   menus:['lilia-breakfast','lilia-ld','lilia-drinks','lilia-kids','lilia-signature']}
+   menus:['lilia-breakfast','lilia-ld','lilia-drinks','lilia-kids','lilia-signature','lilia-buffet']}
 ];
 
 /* ================= DIYA LOBBY BAR — SEED DATA (from the Diya InDesign files) ================= */
@@ -1336,6 +1350,79 @@ T.tayoSunbeds={size:[1530.71,680.31],color:TY.amber,thumb:'#F1C3A3',label:'6-pan
   return out;}
 };
 
+/* ================= BUFFET TAGS =================
+   Lilia buffet card (Lilia_Buffet_Card.ai): 85 × 55 mm, Fig rounded frame inset 2.6 mm,
+   EN Fraunces Light 22/24 pt, AR Parastoo 30/30 pt, centred. Printed 9 per A4 (landscape)
+   with cut marks, or one card per page for card printers. */
+const MM=72/25.4;
+const BT={W:85*MM,H:55*MM,inset:7.5,radius:18.7,stroke:.75,padX:14,
+  sheet:{W:841.89,H:595.28,cols:3,rows:3},markGap:2*MM,markLen:6*MM};
+/* shrink-to-fit: largest size (≤ start) at which the text fits in maxLines lines */
+const BT_FIT={},BT_OPSZ="font-variation-settings:'opsz' 22;";  /* 'Optical' sizing in the AI file = optical size of 22 pt */
+function btMeasureBox(){let m=document.getElementById('btMeasure');
+  if(!m){m=document.createElement('div');m.id='btMeasure';m.className='pg';m.style.cssText='position:absolute;left:-99999px;top:0;width:auto;height:auto;visibility:hidden';document.body.append(m);}
+  return m;}
+function btFit(text,cls,start,min,lhRatio,maxW,maxLines){
+  const key=[text,cls,start,maxW,maxLines].join('|');if(BT_FIT[key])return BT_FIT[key];
+  const box=btMeasureBox();box.innerHTML=`<div class="${cls}" style="width:${maxW}pt;text-align:center;${cls==='fr'?BT_OPSZ:''}">${esc(text)}</div>`;const el=box.firstChild;
+  let pt=start;
+  for(;pt>min;pt-=.5){el.style.fontSize=pt+'pt';el.style.lineHeight=(pt*lhRatio)+'pt';
+    if(el.getBoundingClientRect().height<=pt*lhRatio*maxLines*PX+1)break;}
+  return BT_FIT[key]={pt,lh:pt*lhRatio};}
+function btTag(it,S){const ink='currentColor',w=BT.W-2*BT.inset-2*BT.padX;
+  const en=filled(it.name)?btFit(it.name,'fr',22,13,24/22,w,2):null,ar=filled(it.name_ar)?btFit(it.name_ar,'ar rtl',30,17,1,w,2):null;
+  const al=S.allergens&&filled(it.allergens)?String(it.allergens).split(/[,;|]+/).map(s=>s.trim()).filter(Boolean).join('  ·  '):'';
+  return (S.frame!==false?`<div class="a" style="left:${BT.inset}pt;top:${BT.inset}pt;width:${BT.W-2*BT.inset}pt;height:${BT.H-2*BT.inset}pt;border:${BT.stroke}pt solid ${ink};border-radius:${BT.radius}pt;box-sizing:border-box"></div>`:'')+
+    `<div class="a" style="left:${BT.inset+BT.padX}pt;top:${BT.inset}pt;width:${w}pt;height:${BT.H-2*BT.inset-(al?14:0)}pt;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center">`+
+      (en?`<div class="fr" style="font-size:${en.pt}pt;line-height:${en.lh}pt;width:100%;${BT_OPSZ}">${esc(S.upper?it.name.toUpperCase():it.name)}</div>`:'')+
+      (ar?`<div class="ar rtl" style="font-size:${ar.pt}pt;line-height:${ar.lh}pt;width:100%">${esc(it.name_ar)}</div>`:'')+`</div>`+
+    (al?`<div class="a fr c" style="left:${BT.inset+BT.padX}pt;top:${BT.H-BT.inset-19}pt;width:${w}pt;font-size:7pt;line-height:9pt;letter-spacing:.02em;font-variation-settings:'opsz' 9">${esc(al)}</div>`:'');}
+/* list of tags, repeated by quantity; optionally each section starts a new sheet */
+function btList(m){const out=[];
+  m.sections.forEach(sec=>{let first=true;(sec.items||[]).forEach(it=>{if(!filled(it.name)&&!filled(it.name_ar))return;
+    const n=Math.max(1,Math.min(99,parseInt(it.qty,10)||1));
+    for(let k=0;k<n;k++){out.push({it,brk:first&&m.settings.sectionSheets,sec});first=false;}});});
+  return out;}
+T.buffetTags={color:'#6C202A',thumb:'#C9A2A6',
+  get size(){return (typeof M!=='undefined'&&M&&M.template==='buffetTags'&&M.settings.layout==='single')?[BT.W,BT.H]:[BT.sheet.W,BT.sheet.H];},
+  get label(){return (typeof M!=='undefined'&&M&&M.template==='buffetTags'&&M.settings.layout==='single')?'85 × 55 mm · one card per page':'85 × 55 mm cards · 9 per A4 · cut marks';},
+  render(m){const S=m.settings,C=S.color||this.color,list=btList(m),out=[];
+    const tagDiv=(x,y,t)=>`<div class="blk hl" data-id="${t.it.id}" style="left:${x}pt;top:${y}pt;width:${BT.W}pt;height:${BT.H}pt">${btTag(t.it,S)}</div>`;
+    if(!list.length)return [{label:'No tags yet',html:pageWrap(...this.size,C,`<div class="a fr c" style="left:0;top:45%;width:100%;font-size:14pt;opacity:.5">Add dishes on the left</div>`)}];
+    if(S.layout==='single')return list.map(t=>({label:(t.it.name||t.it.name_ar)+(t.sec.title?' · '+t.sec.title:''),html:pageWrap(BT.W,BT.H,C,tagDiv(0,0,t))}));
+    const {W,H,cols,rows}=BT.sheet,per=cols*rows,MX=(W-cols*BT.W)/2,MY=(H-rows*BT.H)/2;
+    const sheets=[];let cur=null;
+    list.forEach(t=>{if(!cur||cur.length===per||(t.brk&&cur.length)){cur=[];sheets.push(cur);}cur.push(t);});
+    const g=BT.markGap,L=BT.markLen,x1=MX+cols*BT.W,y1=MY+rows*BT.H;let marks='';
+    for(let i=0;i<=cols;i++){const v=MX+i*BT.W;marks+=`M${v} ${MY-g-L}V${MY-g}M${v} ${y1+g}V${y1+g+L}`;}
+    for(let i=0;i<=rows;i++){const v=MY+i*BT.H;marks+=`M${MX-g-L} ${v}H${MX-g}M${x1+g} ${v}H${x1+g+L}`;}
+    const markSvg=S.marks===false?'':`<svg class="a" style="left:0;top:0" width="${W}pt" height="${H}pt" viewBox="0 0 ${W} ${H}"><path d="${marks}" stroke="#000" stroke-width=".25" fill="none"/></svg>`;
+    sheets.forEach((sh,si)=>{const secs=[...new Set(sh.map(t=>t.sec.title).filter(Boolean))];
+      out.push({label:`Sheet ${si+1} · ${sh.length} card${sh.length>1?'s':''}${secs.length?' · '+secs.join(', '):''}`,
+        html:pageWrap(W,H,C,markSvg+sh.map((t,k)=>tagDiv(MX+(k%cols)*BT.W,MY+Math.floor(k/cols)*BT.H,t)).join(''))});});
+    return out;}
+};
+/* CSV in / out (same columns as the HGI tag printer: Arabic, English, Allergens, Qty — plus optional Section) */
+function btParseCSV(text){text=text.replace(/^﻿/,'');const rows=[];let row=[],f='',q=false;
+  for(let i=0;i<text.length;i++){const c=text[i];
+    if(q){if(c==='"'){if(text[i+1]==='"'){f+='"';i++;}else q=false;}else f+=c;}
+    else if(c==='"')q=true;else if(c===','){row.push(f);f='';}
+    else if(c==='\n'||c==='\r'){if(c==='\r'&&text[i+1]==='\n')i++;row.push(f);rows.push(row);row=[];f='';}else f+=c;}
+  if(f!==''||row.length){row.push(f);rows.push(row);}
+  return rows.filter(r=>r.some(v=>v.trim()!==''));}
+function btFromCSV(text){const rows=btParseCSV(text);if(!rows.length)return [];
+  const hd=rows[0].map(v=>v.trim().toLowerCase()),find=keys=>hd.findIndex(x=>keys.some(k=>x.includes(k)));
+  let iAr=find(['arabic','عربي']),iEn=find(['english','name','dish']),iAl=find(['allergen','حساسية']),iQ=find(['qty','quantity','copies','count']),iS=find(['section','category','station']),start=1;
+  if(iAr<0&&iEn<0){iAr=0;iEn=1;iAl=2;iQ=3;iS=-1;start=0;}
+  const secs=[],by={};
+  for(let r=start;r<rows.length;r++){const g=i=>i>-1&&rows[r][i]!=null?String(rows[r][i]).trim():'';
+    const it={id:uid(),type:'item',name:g(iEn),name_ar:g(iAr),allergens:g(iAl),qty:String(parseInt(g(iQ),10)>0?parseInt(g(iQ),10):1)};
+    if(!it.name&&!it.name_ar)continue;const s=g(iS)||'Dishes';
+    if(!by[s]){by[s]={id:uid(),title:s,items:[]};secs.push(by[s]);}by[s].items.push(it);}
+  return secs;}
+function btToCSV(m){const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
+  return '﻿Section,English,Arabic,Allergens,Qty\n'+m.sections.flatMap(s=>(s.items||[]).map(it=>[s.title||'',it.name,it.name_ar,it.allergens||'',it.qty||1].map(q).join(','))).join('\n');}
+
 /* ================= SHARED SAVING (Google Apps Script + Google Sheet) =================
    Every change is saved in this browser at once, and — when a shared-saving link is set in
    config.json — also to the team's Google Sheet, so everyone continues from the latest
@@ -1551,7 +1638,7 @@ function editorScreen(o,id){M=DB.menus[id];MID=id;hist=[];fut=[];lastSnap=snap()
   crumbs([{t:'Outlets',href:'#/'},{t:o.name,href:'#/'+o.id},{t:M.name}]);
   const ta=$('#topActions');ta.innerHTML='';
   ta.append(h('div',{class:'save-state',id:'saveState'},h('i'),h('span',{},'All changes saved')),
-    null,h('button',{class:'btn ghost icon',id:'bUndo',title:'Undo (Ctrl/Cmd+Z)',html:ico('undo'),onclick:undo,disabled:true}),
+    h('button',{class:'btn ghost icon',id:'bUndo',title:'Undo (Ctrl/Cmd+Z)',html:ico('undo'),onclick:undo,disabled:true}),
     h('button',{class:'btn ghost icon',id:'bRedo',title:'Redo (Ctrl/Cmd+Shift+Z)',html:ico('redo'),onclick:redo,disabled:true}),
     moreMenu(),
     h('button',{class:'btn pri',id:'bPdf',onclick:e=>exportPDF(e.currentTarget),html:`<span class="spin"></span><span class="lbl" style="display:flex;gap:7px;align-items:center">${ico('pdf')}Export PDF</span>`}));
@@ -1607,6 +1694,7 @@ function itemFields(sec,it){const tp=M.template;
   if(tp==='diyaTea')return [['name','Name (EN)'],['name_ar','Name (AR)',{rtl:1}],['price','Price',{ph:sec.kind==='feature'?'e.g. 80':'38 or 38↵48'}],['desc','Description (EN)',{cls:'w3',ph:sec.kind==='feature'?'':'optional · sizes on separate lines, e.g. Small↵Large'}],['desc_ar','Description (AR)',{rtl:1,cls:'w3'}]];
   if(tp==='diyaDrinks'){if(sec.style==='list')return [['name','Name',{cls:'w2'}],['price','Price',{ph:'e.g. 66 / 1,320'}],['desc','Extra text (optional)',{cls:'w3',ph:'e.g. tasting notes, or Small↵Large with prices on 2 lines'}]];
     return [['name','Name',{cls:'w2'}],['price','Price',{ph:'e.g. 64 / 300'}],['desc','Description',{cls:'w3'}]];}
+  if(tp==='buffetTags')return [['name','Dish (EN)',{cls:'w2',ph:'e.g. Croissant'}],['qty','Copies',{ph:'1'}],['name_ar','Dish (AR)',{rtl:1,cls:'w3',ph:'e.g. كرواسون'}],['allergens','Allergens (optional)',{cls:'w3',ph:'e.g. Gluten, Dairy, Eggs'}]];
   if(tp==='tayoFood'||tp==='tayoKids'||tp==='tayoSunbeds'){const f=[['name','Dish (EN)',{cls:'w2'}],['price','Price',{ph:'e.g. 85'}],['name_ar','Dish (AR)',{rtl:1,cls:'w3'}]];
     if(it.opts_en!=null||it.opts_ar!=null)f.push(['opts_en','Options (EN) · one per line',{ph:'Tuna↵Salmon'}],['opts_price','Option prices · one per line',{ph:'95↵95'}],['opts_ar','Options (AR) · one per line',{rtl:1}]);return f;}
   if(tp==='tayoDrinks'){if(it.type==='sub')return [['name','Subheading',{cls:'w3',ph:'e.g. FRANCE'}]];
@@ -1615,7 +1703,7 @@ function itemFields(sec,it){const tp=M.template;
   if(tp==='drinks'){if(sec.style==='list')return [['name','Name',{cls:'w2'}],['price','Price',{ph:sec.glassBottle?'glass / bottle':''}]];
     return [['name','Name',{cls:'w2'}],['price','Price',{ph:sec.glassBottle?'glass / bottle':''}],['desc','Description',{cls:'w3'}]];}
   return [];}
-function blankItem(sec,type){const tp=M.template;const it={id:uid(),type:type||'item',name:'',name_ar:'',price:''};
+function blankItem(sec,type){const tp=M.template;if(tp==='buffetTags')return {id:uid(),type:'item',name:'',name_ar:'',allergens:'',qty:'1'};const it={id:uid(),type:type||'item',name:'',name_ar:'',price:''};
   if(type==='sub')return it;if(tp==='breakfast'&&sec&&sec.kind==='band'){it.inline=true;it.sub='';}else{it.desc='';it.desc_ar='';}return it;}
 function secLabel(sec){if(sec.kind==='blank')return 'Blank page';if(sec.kind==='divider')return 'Divider · '+(sec.title||'');
   if(M.template==='drinks'||M.template==='diyaDrinks'||M.template==='tayoDrinks')return [sec.pageTitle,sec.title].filter(Boolean).join(' › ')||'Untitled group';
@@ -1641,6 +1729,7 @@ function buildContent(sc){
     diyaFood:'A section with a page header (e.g. Breakfast, Lunch / Dinner) starts a new page with the large title. Each dish shows English, price and Arabic side by side.',
     diyaTea:'“3 columns” pages list English, price and Arabic. “Feature” pages show one tea per page, centred. The introduction and Afternoon Tea Experience pages are under Page settings.',
     tayoFood:'Sections flow onto pages automatically. Divider pages (illustration + title) and blank pages are listed in order, exactly as in the printed menu — move, add or delete them as needed.',
+    buffetTags:'One card per dish. Set “Copies” for dishes that need more than one card. Group dishes by station or meal — groups are only for you and are not printed.',
     tayoKids:'Add, remove or reorder dishes; the page reflows automatically.',
     tayoDrinks:'Groups with the same page title share a page. For water-style sizes write the name lines (Acqua Panna↵Small↵Large) and the prices on matching lines (↵38↵48).',
     tayoSunbeds:'Content flows across the five inside panels of the fold-out (logo panel is fixed). If it no longer fits, an extra “Overflow” sheet appears in red.',
@@ -1684,6 +1773,7 @@ function secCard(sec,si){const open=SECT_OPEN.has(sec.id)||M.template==='signatu
       box.append(itemList(sec,c.items,true));b.append(box);});
   }else{
     const g=h('div',{class:'fgrid'});
+    if(tp==='buffetTags')g.append(field(sec,'title','Group name (not printed)',{cls:'full',ph:'e.g. Breakfast · Bakery station'}));
     if(tp==='breakfast'||tp==='kids')g.append(field(sec,'title','Section title (EN)'),field(sec,'title_ar','Section title (AR)',{rtl:1}));
     if(tp==='ld')g.append(field(sec,'title','Section title (EN)'),field(sec,'title_ar','Section title (AR)',{rtl:1}),field(sec,'note','Note after title (EN)',{ph:'optional, e.g. (COOKED OVER EMBERS)'}),field(sec,'note_ar','Note after title (AR)',{rtl:1,ph:'optional'}));
     if(tp==='diyaFood')g.append(field(sec,'title','Section title (EN)',{ph:'optional, e.g. SALADS'}),field(sec,'title_ar','Section title (AR)',{rtl:1}),
@@ -1704,7 +1794,7 @@ function secCard(sec,si){const open=SECT_OPEN.has(sec.id)||M.template==='signatu
       sec.style==='list'?field(sec,'spacing','Line spacing',{select:[['compact','Compact (no gap)'],['airy','Airy (blank line between)']]}):h('div'));
     if(g.children.length)b.append(g);
     const r=h('div',{class:'row'});
-    if(tp!=='signature')r.append(toggle(sec,'newPage','Start on a new page'));
+    if(tp!=='signature'&&tp!=='buffetTags')r.append(toggle(sec,'newPage','Start on a new page'));
     if(tp==='drinks')r.append(toggle(sec,'glassBottle','Show “GLASS/BOTTLE” label'));
     if(tp==='tayoDrinks')r.append(toggle(sec,'label','Show “GLASS / BOTTLE” label'));
     if(tp==='diyaDrinks'&&sec.style==='desc')r.append(toggle(sec,'caps','Names in capitals'));
@@ -1735,7 +1825,7 @@ function itemCard(sec,arr,it,ii,isBand){
   const tools=h('div',{class:'tools'},
     it.type==='sub'?h('span',{class:'tag'},'Subheading'):null,
     isBand?toggle(it,'inline','Arabic on same line'):null,
-    !isBand?toggle(it,'breakBefore','New page before',{title:'Force this line to start a new page'}):null,
+    !isBand&&M.template!=='buffetTags'?toggle(it,'breakBefore','New page before',{title:'Force this line to start a new page'}):null,
     (['tayoFood','tayoSunbeds','tayoKids'].includes(M.template)&&it.type!=='sub')?h('button',{class:'btn ghost sm',style:'font-size:11px',onclick:()=>{if(it.opts_en!=null){delete it.opts_en;delete it.opts_ar;delete it.opts_price;}else{it.opts_en='';it.opts_ar='';it.opts_price='';}touched('now');buildLeft();}},it.opts_en!=null?'Remove options':'+ Options'):null,
     h('div',{class:'sp'}),
     h('button',{class:'btn ghost',title:'Move up',html:ico('up',13),disabled:ii===0,onclick:()=>mv(arr,ii,-1)}),
@@ -1781,6 +1871,19 @@ function buildPage(sc){const S=M.settings,tp=M.template;const G=(t,...k)=>h('div
     G('Footer',fg(field(S,'footer_en','Price note',{cls:'full'}))),G('Printing',fg(field(S,'blankEnd','Blank pages at the end',{select:[['0','None'],['1','1'],['2','2 (as in the original)'],['3','3']]}))));
   if(tp==='tayoSunbeds')sc.append(G('Sheets',h('div',{class:'row'},toggle(S,'outside','Include the outside (illustration) sheet'))),footer(),
     h('div',{class:'note'},'Prints as full flat sheets (540 × 240 mm): inside + outside. The dashed fold lines show in the preview only.'));
+  if(tp==='buffetTags'){
+    const imp=replace=>{const inp=h('input',{type:'file',accept:'.csv,text/csv'});inp.onchange=()=>{const f=inp.files[0];if(!f)return;const r=new FileReader();
+      r.onload=()=>{const secs=btFromCSV(r.result);if(!secs.length){alert('No dishes found in '+f.name+'. Check the columns: English, Arabic, Allergens, Qty (and optional Section).');return;}
+        if(replace){if(!confirm('Replace all '+counts(M).i+' dishes with the '+secs.reduce((a,s)=>a+s.items.length,0)+' in '+f.name+'?'))return;M.sections=secs;}else M.sections.push(...secs);
+        touched('now');buildLeft();toast(f.name+' loaded');};r.readAsText(f,'UTF-8');};inp.click();};
+    sc.append(G('Printing',fg(field(S,'layout','Layout',{cls:'full',select:[['sheet','A4 sheets · 9 cards per page with cut marks'],['single','One card per page (85 × 55 mm) · for card printers']]})),
+        h('div',{class:'row'},toggle(S,'marks','Cut marks (A4 sheets)'),toggle(S,'frame','Rounded frame'),toggle(S,'sectionSheets','Each group starts a new sheet'))),
+      G('Text',h('div',{class:'row'},toggle(S,'allergens','Show allergens at the bottom of the card'),toggle(S,'upper','English in capitals'))),
+      G('Import & export',h('p',{class:'note',style:'margin:0 0 10px'},'Load dishes from Excel: save the sheet as “CSV UTF-8” with the columns English, Arabic, Allergens, Qty (and optionally Section).'),
+        h('div',{class:'row'},h('button',{class:'btn sm',onclick:()=>imp(false)},'Add dishes from CSV…'),h('button',{class:'btn sm',onclick:()=>imp(true)},'Replace all from CSV…'),
+          h('button',{class:'btn sm ghost',onclick:()=>download(M.name+' '+new Date().toISOString().slice(0,10)+'.csv',btToCSV(M),'text/csv;charset=utf-8')},'Download as CSV'))),
+      h('div',{class:'note'},'Design: Lilia buffet card, 85 × 55 mm — Fraunces Light 22/24 pt and Parastoo 30/30 pt in Fig. Long names shrink automatically to fit. When printing, use Actual size / 100%.'));
+    return;}
   if(M.outlet==='tayo'){sc.append(h('div',{class:'note'},'Fonts: the original uses Alverata and Greycliff Arabic CF. If they aren’t installed on this computer, close stand-ins are used (Spectral and Readex Pro). Add the real font files under ⋯ › Brand fonts. Footers use Parastoo (built in).'));return;}
   if(M.outlet==='diya'){sc.append(h('div',{class:'note'},'Fonts: Diya uses Adobe Arabic and Garamond Premier Pro. If they aren’t installed on this computer, close stand-ins are used (Noto Naskh Arabic, EB Garamond). Add the real font files under ⋯ › Brand fonts.'));return;}
   sc.append(h('div',{class:'note'},'Fonts: Fraunces Light and Parastoo are built in. Headings use Aktiv Grotesk Ex — if it isn’t installed on this computer, a close stand-in (Archivo Expanded) is used. Add the real font files under ⋯ › Brand fonts.'));}

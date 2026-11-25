@@ -5,7 +5,7 @@ Every layout follows the original InDesign (IDML) files.
 
 | Outlet | Menus |
 |---|---|
-| Lilia | Breakfast, Lunch & Dinner, Drinks, Kids, Signature Breakfast |
+| Lilia | Breakfast, Lunch & Dinner, Drinks, Kids, Signature Breakfast, Buffet tags |
 | Diya Lobby Bar | Food, Drinks, Afternoon Tea |
 | Tayō | Food, Drinks, Kids, Sunbeds (fold-out) |
 
@@ -49,6 +49,7 @@ Commit both the `src/` change and the new `index.html`.
 |---|---|
 | `src/app_head.html` | Page shell and all CSS. The UI colours are at the top: Pantone 554 `#324F47` and Warm Grey 1 `#ECE6DA`. |
 | `src/app.js` | The app: outlet and menu screens, the editor, page settings, export, backup and the fonts dialog. |
+| `src/buffet_engine.js` | Buffet tags: the Lilia 85 × 55 mm card, A4 sheets of 9 with cut marks, and CSV import/export. |
 | `src/sync.js` | Shared saving, conflict handling and version history. It talks to `shared-saving/Code.gs`. |
 | `config.json` | The shared-saving web app link. Edit it on GitHub; no rebuild needed. |
 | `src/engine.js` | Shared layout engine (pagination, measuring) and the **Lilia** templates. |
