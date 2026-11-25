@@ -240,6 +240,7 @@ function secCard(sec,si){const open=SECT_OPEN.has(sec.id)||M.template==='signatu
     if(tp==='diyaTea')g.append(field(sec,'pageTitle','Page title (EN)'),field(sec,'pageTitle_ar','Page title (AR)',{rtl:1}),
       field(sec,'kind','Layout',{cls:'full',select:[['list','3 columns — English · price · Arabic'],['feature','Feature — one item centred, EN then AR']]}));
     if(tp==='diyaDrinks')g.append(field(sec,'pageTitle','Page title',{ph:'e.g. WINES'}),field(sec,'title','Group heading',{ph:'e.g. RED WINE (optional)'}),
+      field(sec,'title_ar','Heading in Arabic (optional)',{rtl:1}),field(sec,'subtitle','Subtitle (italic, optional)'),field(sec,'labelText','Price label (optional)',{ph:'glass / bottle'}),field(sec,'intro','Description (optional)',{cls:'full'}),
       field(sec,'style','Layout',{cls:'full',select:[['list','Name + price list'],['desc','Name, notes & price (cocktails, wines)'],['feature','Feature (teas: name, paragraphs, price)']]}));
     if(tp==='tayoFood'&&sec.kind==='blank'){b.append(h('div',{class:'note',style:'margin:0'},'An empty page (back of a divider, or end of the booklet). Delete it if you don’t need it.'));card.append(b);return card;}
     if(tp==='tayoFood'&&sec.kind==='divider'){b.append(h('div',{class:'fgrid'},field(sec,'title','Title (EN)'),field(sec,'title_ar','Title (AR)',{rtl:1}),

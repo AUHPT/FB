@@ -66,6 +66,7 @@ def build(adobe_dir=None):
             .replace('/*DIYAFONTS*/', diya_fonts(adobe_dir)).replace('/*TAYOFONTS*/', tayo_fonts()))
     diya = (read('diya_seed.js').replace('__AT_TEAS__', read('data', 'at_teas.json'))
             .replace('__DR_TEAS__', read('data', 'dr_teas.json'))
+            .replace('__DIYA_DRINKS__', read('data', 'diya_drinks.json'))
             .replace('__DIYA_LOGO__', 'data:image/png;base64,' + b64(p('assets', 'diya_logo.png'))))
     tayo = (read('tayo_seed.js').replace('__TAYO_DATA__', read('data', 'tayo_seed_data.json'))
             .replace('__TAYO_LOGO__', 'data:image/png;base64,' + b64(p('assets', 'tayo_logo.png'))))

@@ -116,7 +116,13 @@ T.diyaTea={size:[439.37,595.28],color:DY.ink,thumb:'#C9B29C',label:'155 × 210 m
 T.diyaDrinks={size:[439.37,737.01],color:DY.ink,thumb:'#C9B29C',label:'155 × 260 mm incl. 20 mm flap · die-cut · facing pages',
  border:[[333.1,28.7],[410.6,106.4],[410.6,708.3],[85.4,708.3],[85.4,106.4],[163.0,28.7]],
  cut:[[345.0,0.1],[151.0,0.1],[56.8,94.4],[0.1,94.4],[0.1,736.9],[439.2,736.9],[439.2,94.4]],
- gh(sec){return {id:sec.id,kind:'gh',sec,w:257.9,h:42,keep:true,html:`<div class="gr b t200 caps c" style="font-size:11pt;line-height:14pt">${txt(sec.title)}</div>`};},
+ gh(sec,cont){const ar=filled(sec.title_ar)?` <span style="opacity:.6">|</span> <span class="aa b" style="font-size:15pt">${esc(sec.title_ar)}</span>`:'';
+   const sub=!cont&&filled(sec.subtitle)?`<div class="gr i c" style="font-size:11pt;line-height:14pt;margin-top:3pt">${txt(sec.subtitle)}</div>`:'',
+     intro=!cont&&filled(sec.intro)?`<div class="gr c" style="font-size:10pt;line-height:13pt;margin-top:6pt">${txt(sec.intro)}</div>`:'',
+     lab=filled(sec.labelText)?`<div class="gr b t200 caps r" style="font-size:7pt;line-height:10pt">${esc(sec.labelText)}</div>`:'';
+   const head=`<div class="gr b t200 caps c" style="font-size:11pt;line-height:14pt">${txt(sec.title)}${ar}</div>`;
+   if(!sub&&!intro&&!lab)return {id:sec.id,kind:'gh',sec,w:257.9,h:42,keep:true,html:head};
+   return {id:sec.id,kind:'gh',sec,w:257.9,keep:true,html:head+sub+intro+`<div style="height:${lab?14:28}pt"></div>`+(lab?lab+'<div style="height:4pt"></div>':'')};},
  render(m){const S=m.settings,W=439.37,H=737.01,C=this.color,out=[],self=this;
   const side=()=>(out.length+1)%2===1,fr=R=>dyFrame(W,H,R,this.border,this.cut,S.showCut);
   if(S.intro){const R=side();out.push({label:'Introduction',html:pageWrap(W,H,C,fr(R)+A(R?119.1:62.4,321.2,258,'gr c','font-size:11pt;line-height:14pt',txt(S.intro_en))+dyOrn(W,H,R?240.1:183.6,675.2))});
@@ -133,12 +139,12 @@ T.diyaDrinks={size:[439.37,737.01],color:DY.ink,thumb:'#C9B29C',label:'155 × 26
       else if(sec.style==='feature'){gap=k?42:0;
         html=priced(`<div class="gr b caps" style="font-size:11pt;line-height:14pt;letter-spacing:.02em">${txt(it.name)}</div>`,215,esc(it.price),{lh:14,pcls:'gr',pstyle:'font-size:11pt'})+
           (filled(it.desc)?`<div class="gr" style="font-size:11pt;line-height:14pt;margin-top:14pt;max-width:245pt">${txt(it.desc)}</div>`:'');}
-      else{html=priced(`<div class="gr b ${sec.caps?'caps':''}" style="font-size:11pt;line-height:14pt;letter-spacing:.02em">${txt(it.name)}</div>`,215,esc(it.price),{lh:14,pcls:'gr',pstyle:'font-size:11pt'})+
+      else{html=priced(`<div class="gr b ${sec.caps?'caps':''}" style="font-size:11pt;line-height:14pt;letter-spacing:.02em">${txt(it.name)}</div>`,215,esc(it.price),{lh:14,pcls:'gr',pstyle:'font-size:11pt;white-space:pre'})+
           (filled(it.desc)?`<div class="gr" style="font-size:11pt;line-height:14pt;max-width:230pt${sec.caps?';letter-spacing:-.01em':''}">${txt(it.desc)}</div>`:'');}
       blocks.push({id:it.id,sec,w:257.9,gap,brk:!!it.breakBefore,html});});
     prev=sec;});
   const pages=flow(blocks,(i,b,cont)=>{const pg={y:170.1,bottom:672,placed:[],title:b.sec.pageTitle};
-    if(b.kind!=='gh'){const g=self.gh(b.sec);g.id=null;pg.placed.push({b:g,y:pg.y});pg.y+=g.h;}return pg;});
+    if(b.kind!=='gh'){const g=self.gh(b.sec,true);g.id=null;if(g.h==null)measureAll([g]);pg.placed.push({b:g,y:pg.y});pg.y+=g.h;}return pg;});
   pages.forEach(pg=>{const R=side(),x=R?119.1:62.4;pg.placed.forEach(p=>p.b.x=x);
     out.push({label:(pg.title||'')+(R?' · right':' · left'),html:pageWrap(W,H,C,fr(R)+
       A(R?84.8:28.3,100.6,326.2,'gr b t200 caps c','font-size:14pt;line-height:14pt',txt(pg.title))+placeHtml(pg)+
