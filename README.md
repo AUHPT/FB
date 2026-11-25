@@ -22,7 +22,7 @@ Every layout follows the original InDesign (IDML) files.
 - The first save on a computer asks for your name and the team passcode (once).
 - **⋯ › Version history** lists every saved version, with who saved it and when, and can restore any of them.
 - **⋯ › Download backup** saves a copy of all menus as a file. **⋯ › Reset to original** brings a menu back to the InDesign version.
-- **Brand fonts.** Alverata, Greycliff Arabic CF, Garamond Premier Pro, Aktiv Grotesk Ex and Adobe Arabic are licensed, so they are **not** in this repository.
+- **Brand fonts.** Alverata (Tayō) is built in, supplied by the hotel (`src/fonts/licensed/`). Greycliff Arabic CF, Garamond Premier Pro, Aktiv Grotesk Ex and Adobe Arabic are **not** in this repository.
   - If they are installed on the computer, they are used automatically.
   - Otherwise close free stand-ins are used.
   - Each person can add the real font files under **⋯ › Brand fonts**. They are stored in that browser only.
@@ -56,7 +56,7 @@ Commit both the `src/` change and the new `index.html`.
 | `src/diya_engine.js`, `src/tayo_engine.js` | The **Diya** and **Tayō** templates. All positions are in pt, taken from the IDML files. |
 | `src/seed.js`, `src/diya_seed.js`, `src/tayo_seed.js` (+ `src/data/`) | The original menu content, used by “Reset to original”. |
 | `src/assets/`, `src/data/logos.json`, `src/data/tayo_art.json` | Logos and the vector illustrations. |
-| `src/fonts/` | Free fonts (SIL Open Font License) built into the page. |
+| `src/fonts/` | Free fonts (SIL Open Font License) built into the page. `src/fonts/licensed/` holds the Alverata files supplied by the hotel. |
 
 Each outlet is registered with `OUTLETS.push({...})` at the end of its seed file, and each menu layout is a `T.<template>` object with a `render()` function.
 

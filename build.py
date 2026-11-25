@@ -46,6 +46,11 @@ def diya_fonts(adobe_dir):
 
 def tayo_fonts():
     css = ''
+    # Alverata (Tayō brand font) — files supplied by the hotel, in src/fonts/licensed/
+    for name, w, st in (('alverata-400', 400, 'normal'), ('alverata-400-italic', 400, 'italic'),
+                        ('alverata-500', 500, 'normal'), ('alverata-700', 700, 'normal')):
+        if os.path.exists(p('fonts', 'licensed', name + '.woff2')):
+            css += ff('Alverata', font(os.path.join('licensed', name + '.woff2')), f'font-weight:{w};font-style:{st};')
     for w in (400, 500, 700):
         css += ff('Spectral T', font(f'spectral-latin-{w}-normal.woff2'), f'font-weight:{w};unicode-range:{LAT};')
         css += ff('Spectral T', font(f'spectral-latin-ext-{w}-normal.woff2'), f'font-weight:{w};unicode-range:{LATEXT};')
