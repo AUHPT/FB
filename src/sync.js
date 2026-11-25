@@ -32,6 +32,7 @@ async function cloudPull(first){
   try{const res=await api({action:'list'});if(!res.ok)throw new Error(res.error);CLOUD.online=true;
     for(const c of res.menus){if(!DB.menus[c.id]&&!SEED_MENUS[c.id])continue;
       const mine=SYNC[c.id];if(mine&&mine.rev>=c.rev)continue;
+      if(staleContent(c.data,c.id)){SYNC[c.id]={rev:c.rev,at:c.at,by:c.by,hash:'-'};continue;}  /* shared copy predates a content update: upload the new one */
       if(DB.menus[c.id]&&isDirty(c.id)&&(!mine||mine.rev<c.rev))conflicts.push(c);
       else{adopt(c);changed.push(c);}}
   }catch(e){CLOUD.online=false;}

@@ -22,7 +22,11 @@ function seed(id){const m=withIds(clone(SEED_MENUS[id]));m.updatedAt=null;return
 let DB={menus:{}};
 try{DB=JSON.parse(localStorage.getItem(KEY))||DB;}catch(e){}
 DB.menus=DB.menus||{};
-for(const id in SEED_MENUS)if(!DB.menus[id])DB.menus[id]=seed(id);else withIds(DB.menus[id]);
+/* a menu whose content was re-issued (newer contentVersion in the seed) is replaced by the new version */
+const staleContent=(data,id)=>{const cv=SEED_MENUS[id]&&SEED_MENUS[id].contentVersion;return !!cv&&(!data||(data.contentVersion||'')<cv);};
+for(const id in SEED_MENUS){if(!DB.menus[id])DB.menus[id]=seed(id);
+  else if(staleContent(DB.menus[id],id)){DB.menus[id]=seed(id);DB.menus[id].updatedAt=Date.now();}
+  else withIds(DB.menus[id]);}
 let FONTS={};try{FONTS=JSON.parse(localStorage.getItem(FKEY))||{};}catch(e){}
 let saveT=null;
 function persist(){clearTimeout(saveT);setSave('dirty');saveT=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify(DB));if(typeof CLOUD!=='undefined'&&CLOUD.ready){cloudStatus();cloudSoon();}else setSave('ok');}catch(e){setSave('err');toast('Could not save in this browser: '+e.message);}},450);}
@@ -242,6 +246,7 @@ function secCard(sec,si){const open=SECT_OPEN.has(sec.id)||M.template==='signatu
       field(sec,'art','Illustration',{cls:'full',select:[['waves','Waves'],['koi','Koi'],['cranes','Cranes'],['fuji','Mount Fuji'],['','None']]})));card.append(b);return card;}
     if(tp==='tayoFood'||tp==='tayoKids'||tp==='tayoSunbeds')g.append(field(sec,'title','Section title (EN)'),field(sec,'title_ar','Section title (AR)',{rtl:1}),field(sec,'note','Small note after title',{ph:'optional, e.g. (3 pieces)'}));
     if(tp==='tayoDrinks')g.append(field(sec,'pageTitle','Page title',{ph:'e.g. WINES'}),field(sec,'title','Group heading',{ph:'e.g. RED WINE'}),
+      field(sec,'subtitle','Subtitle (italic, optional)',{ph:'e.g. Botanical Harmony'}),field(sec,'labelText','Price label (when shown)',{ph:'glass / bottle'}),field(sec,'intro','Description (optional)',{cls:'full'}),
       field(sec,'style','Layout',{cls:'full',select:[['list','Name + price list'],['desc','Name, notes & price (cocktails, wines)']]}));
     if(tp==='drinks')g.append(field(sec,'pageTitle','Page title',{ph:'e.g. WINES'}),field(sec,'title','Group heading',{ph:'e.g. RED WINE (optional)'}),
       field(sec,'style','Layout',{select:[['list','Name + price list'],['na','Name, notes & price'],['wine','Wine list (name, notes, price)'],['cocktail','Centred (name, notes, price)']]}),
@@ -322,7 +327,7 @@ function buildPage(sc){const S=M.settings,tp=M.template;const G=(t,...k)=>h('div
       fg(field(S,'intro_en','Introduction (EN)',{cls:'full'}),field(S,'intro_ar','Introduction (AR)',{rtl:1,cls:'full'}))),footer());
   if(tp==='tayoKids')sc.append(G('Page header',fg(field(S,'title','Title (EN)'),field(S,'title_ar','Title (AR)',{rtl:1}))),footer());
   if(tp==='tayoDrinks')sc.append(G('Introduction page',h('div',{class:'row'},toggle(S,'intro','Include introduction page')),fg(field(S,'intro_en','Introduction',{cls:'full'}))),
-    G('Footer',fg(field(S,'footer_en','Price note',{cls:'full'}))),G('Printing',fg(field(S,'blankEnd','Blank pages at the end',{select:[['0','None'],['1','1'],['2','2 (as in the original)'],['3','3']]}))));
+    G('Footer',fg(field(S,'footer_en','Price note',{cls:'full'}))),G('Printing',fg(field(S,'blankEnd','Blank pages at the end',{select:[['0','None'],['1','1'],['2','2'],['3','3']]}))));
   if(tp==='tayoSunbeds')sc.append(G('Sheets',h('div',{class:'row'},toggle(S,'outside','Include the outside (illustration) sheet'))),footer(),
     h('div',{class:'note'},'Prints as full flat sheets (540 × 240 mm): inside + outside. The dashed fold lines show in the preview only.'));
   if(tp==='buffetTags'){

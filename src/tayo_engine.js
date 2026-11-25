@@ -76,10 +76,13 @@ T.tayoKids={size:[595.28,841.89],color:TY.amber,thumb:'#F1C3A3',label:'A4 · 210
 
 /* ------------------------------------------------------------------ TAYŌ DRINKS (150 × 297 mm, facing pages, EN only) */
 T.tayoDrinks={size:[425.2,841.89],color:TY.amber,thumb:'#F1C3A3',label:'150 × 297 mm · facing pages',
- gh(sec){const lab=sec.label?`<div class="gc b caps r" style="font-size:7pt;line-height:8pt;letter-spacing:.025em;height:26.1pt;padding-top:4.8pt;box-sizing:border-box">glass / Bottle</div>`:'';
+ gh(sec){const lab=sec.label?`<div class="gc b caps r" style="font-size:7pt;line-height:8pt;letter-spacing:.025em;height:26.1pt;padding-top:4.8pt;box-sizing:border-box">${esc(sec.labelText||'glass / Bottle')}</div>`:'';
+   const sub=filled(sec.subtitle)?`<div class="al i" style="font-size:11pt;line-height:13.2pt">${esc(sec.subtitle)}</div>`:'',
+     intro=filled(sec.intro)?`<div class="al" style="font-size:10pt;line-height:13pt;margin-top:4pt">${txt(sec.intro)}</div>`:'',extra=sub||intro;
+   const hasItems=(sec.items||[]).length>0;
    return {id:sec.id,sec,kind:'h',w:265.7,gap:8.6,lead:12.4,keep:true,html:
-   `<div class="al b t100 caps" style="font-size:14pt;line-height:16.8pt;min-height:23.4pt;max-width:265pt">${esc(sec.title)}</div>`+
-   `<div style="border-top:.5pt solid currentColor;height:11.9pt"></div>`+lab};},
+   `<div style="min-height:23.4pt;max-width:265pt${extra?';padding-bottom:9pt':''}"><div class="al b t100 caps" style="font-size:14pt;line-height:16.8pt">${esc(sec.title)}</div>${sub}${intro}</div>`+
+   (hasItems?`<div style="border-top:.5pt solid currentColor;height:11.9pt"></div>`+lab:'')};},
  item(sec,it){if(it.type==='sub')return `<div class="gc b caps" style="font-size:11pt;line-height:13.2pt;letter-spacing:.05em">${esc(it.name)}</div>`;
   const P=t=>`<div class="gc b r pre" style="font-size:11pt;line-height:13.2pt">${esc(t)}</div>`;
   if(sec.style==='desc')return priced(`<div class="gc b caps" style="font-size:11pt;line-height:13.2pt;letter-spacing:.05em">${esc(it.name)}</div>`,214.4,P(it.price),{lh:13.2,pcls:'gc b'})+
@@ -91,7 +94,7 @@ T.tayoDrinks={size:[425.2,841.89],color:TY.amber,thumb:'#F1C3A3',label:'150 × 2
   const blocks=[];let prev=null;
   m.sections.forEach(sec=>{const brk=!!sec.newPage||(prev&&prev.pageTitle!==sec.pageTitle);let first=true;
     if(filled(sec.title)){const g=this.gh(sec);g.brk=brk;blocks.push(g);first=false;}
-    (sec.items||[]).forEach((it,k)=>{blocks.push({id:it.id,sec,w:265.7,gap:first?8.6:(k?13.2:0),lead:first?12.4:0,brk:(first&&brk)||!!it.breakBefore,html:this.item(sec,it)});first=false;});
+    (sec.items||[]).forEach((it,k)=>{blocks.push({id:it.id,sec,w:265.7,gap:first?8.6:(k?13.2:0),lead:first?12.4:0,keep:it.type==='sub',brk:(first&&brk)||!!it.breakBefore,html:this.item(sec,it)});first=false;});
     prev=sec;});
   const pages=tyFlow(blocks,(i,b)=>{const pg={y:101.1,bottom:740,placed:[],title:b.sec.pageTitle};
     if(b.kind!=='h'&&filled(b.sec.title)){const g=self.gh(b.sec);g.id=null;measureAll([g]);pg.placed.push({b:g,y:pg.y});pg.y+=g.h;}return pg;});

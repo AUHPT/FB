@@ -49,6 +49,8 @@ def tayo_fonts():
     for w in (400, 500, 700):
         css += ff('Spectral T', font(f'spectral-latin-{w}-normal.woff2'), f'font-weight:{w};unicode-range:{LAT};')
         css += ff('Spectral T', font(f'spectral-latin-ext-{w}-normal.woff2'), f'font-weight:{w};unicode-range:{LATEXT};')
+    css += ff('Spectral T', font('spectral-latin-400-italic.woff2'), f'font-weight:400;font-style:italic;unicode-range:{LAT};')
+    css += ff('Spectral T', font('spectral-latin-ext-400-italic.woff2'), f'font-weight:400;font-style:italic;unicode-range:{LATEXT};')
     for sub, rng in (('arabic', ARAB), ('latin', LAT), ('latin-ext', LATEXT)):
         css += ff('Readex T', font(f'readex-pro-{sub}-wght-normal.woff2'), f'font-weight:160 700;unicode-range:{rng};')
     return css
