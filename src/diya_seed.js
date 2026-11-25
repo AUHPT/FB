@@ -96,10 +96,15 @@ Object.assign(SEED_MENUS,{
     {kind:'feature',pageTitle:'EXCLUSIVE TEAS',pageTitle_ar:'الشاي الحصري',newPage:true,onePerPage:true,items:[atTea(5),atTea(6),atTea(7)]}
   ]},
 /* ---------------------------------------------------------------- DIYA DRINKS */
-'diya-drinks':{template:'diyaDrinks',outlet:'diya',name:'Drinks',contentVersion:'2026-11-25',
+'diya-lobby-drinks':{template:'diyaDrinks',outlet:'diya',name:'Lobby Drinks',contentVersion:'2026-11-25',
+  settings:{intro:true,blankAfterIntro:true,showCut:false,
+    intro_en:'Where light touches water, brilliance awakens.\n\nEach drink is shaped with measured clarity: crisp, refined, and quietly expressive.\nA sip that reflects the calm beauty of Abu Dhabi’s mangroves...',
+    footer_en:DPRICE_EN},
+  sections:__DIYA_LOBBY_DRINKS__},
+'diya-drinks':{template:'diyaDrinks',outlet:'diya',name:'Mezzanine Drinks',contentVersion:'2026-11-25',
   settings:{intro:true,blankAfterIntro:true,showCut:false,
     intro_en:'Where light touches water, brilliance awakens.\n\nEach drink is shaped with measured clarity: crisp, refined, and quietly expressive.\nA sip that reflects the calm beauty of Abu Dhabi’s mangroves...',
     footer_en:DPRICE_EN},
   sections:__DIYA_DRINKS__}
 });
-OUTLETS.push({id:'diya',name:'Diya',sub:'Lobby Bar',logoImg:'__DIYA_LOGO__',color:'#2B2B2A',menus:['diya-food','diya-drinks','diya-tea']});
+OUTLETS.push({id:'diya',name:'Diya',sub:'Lobby Bar',logoImg:'__DIYA_LOGO__',color:'#2B2B2A',menus:['diya-food','diya-drinks','diya-lobby-drinks','diya-tea']});

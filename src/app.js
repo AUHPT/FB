@@ -27,6 +27,7 @@ const staleContent=(data,id)=>{const cv=SEED_MENUS[id]&&SEED_MENUS[id].contentVe
 for(const id in SEED_MENUS){if(!DB.menus[id])DB.menus[id]=seed(id);
   else if(staleContent(DB.menus[id],id)){DB.menus[id]=seed(id);DB.menus[id].updatedAt=Date.now();}
   else withIds(DB.menus[id]);}
+if(DB.menus['diya-drinks']&&DB.menus['diya-drinks'].name==='Drinks')DB.menus['diya-drinks'].name='Mezzanine Drinks';  /* renamed when the Lobby drinks menu was added */
 let FONTS={};try{FONTS=JSON.parse(localStorage.getItem(FKEY))||{};}catch(e){}
 let saveT=null;
 function persist(){clearTimeout(saveT);setSave('dirty');saveT=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify(DB));if(typeof CLOUD!=='undefined'&&CLOUD.ready){cloudStatus();cloudSoon();}else setSave('ok');}catch(e){setSave('err');toast('Could not save in this browser: '+e.message);}},450);}

@@ -141,7 +141,7 @@ T.diyaDrinks={size:[439.37,737.01],color:DY.ink,thumb:'#C9B29C',label:'155 × 26
           (filled(it.desc)?`<div class="gr" style="font-size:11pt;line-height:14pt;margin-top:14pt;max-width:245pt">${txt(it.desc)}</div>`:'');}
       else{html=priced(`<div class="gr b ${sec.caps?'caps':''}" style="font-size:11pt;line-height:14pt;letter-spacing:.02em">${txt(it.name)}</div>`,215,esc(it.price),{lh:14,pcls:'gr',pstyle:'font-size:11pt;white-space:pre'})+
           (filled(it.desc)?`<div class="gr" style="font-size:11pt;line-height:14pt;max-width:230pt${sec.caps?';letter-spacing:-.01em':''}">${txt(it.desc)}</div>`:'');}
-      blocks.push({id:it.id,sec,w:257.9,gap,brk:!!it.breakBefore,html});});
+      blocks.push({id:it.id,sec,w:257.9,gap,brk:!!it.breakBefore,keep:items.length<=10&&k<items.length-1,html});});  /* short groups are kept on one page */
     prev=sec;});
   const pages=flow(blocks,(i,b,cont)=>{const pg={y:170.1,bottom:672,placed:[],title:b.sec.pageTitle};
     if(b.kind!=='gh'){const g=self.gh(b.sec,true);g.id=null;if(g.h==null)measureAll([g]);pg.placed.push({b:g,y:pg.y});pg.y+=g.h;}return pg;});
